@@ -1,12 +1,14 @@
 .data
 	hello: .asciiz 		"\nBienvenue !\n"
-	msgChoix: .asciiz 	"\nTapez 1: saisir un numéro de carte bancaire pour en vérifier la validité\nTapez 2: Affichage d'un numero valide\nTapez 3: Quitter le programme\n\n -"
+	msgChoix: .asciiz 	"\nTapez 1: saisir un numéro de carte bancaire pour en vérifier la validité\nTapez 2: Affichage d'un numero valide\nTapez 3: Quitter le programme\n\n >>>> "
 	msgReChoisir: .asciiz 	"\nChiffre saisi incorrect, \nVeuillez choisir parmis les propositions présentées\n"
+	espace: .asciiz 	"\n\n"
 	
 	temp1: .asciiz		"\nVous avez choisit le choix numero 1\n"
 	temp2: .asciiz		"\nVous avez choisit le choix numero 2\n"
 	temp3: .asciiz		"\nVous avez choisit de sortir\n"
 	
+	numeroCarte: .space 20
 .text
 
 
@@ -39,15 +41,25 @@ menu:
 	# retour au menu tant qu'une valeur valide n'est pas saisit
 	b menu
 	
-	
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+
 choix1:
 	# service numero 1
 	li $v0 4
 	la $a0 temp1
 	syscall
 	
-	b menu
 	
+	
+	b menu
+
+
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+
 	
 choix2:
 	# service numero 2	
@@ -55,7 +67,50 @@ choix2:
 	la $a0 temp2
 	syscall
 	
-	b menu
+	li $t5 15
+	
+loop:
+	beq $t5 $zero finLoop
+	
+	li $a1, 9  #Here you set $a1 to the max bound.
+    	li $v0, 42  #generates the random number.
+    	syscall
+    	add $a0, $a0, 1  #Here you add the lowest bound
+    	
+    	li $v0, 1
+	syscall
+	
+	move $t2 $a0
+	
+	add $t9 $t9 $t2 #somme de tous les entiers aleatoires
+	
+	sub $t5 $t5 1
+	j loop
+	
+	
+
+finLoop:
+	li $v0 4
+	la $a0 espace
+	syscall
+	
+	li $v0 1
+	move $a0 $t9
+	syscall
+	
+	li $v0 4
+	la $a0 espace
+	syscall
+	
+	j menu
+
+
+	
+	
+	
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
 	
 choix3:
 	# sortie du programme
