@@ -4,8 +4,8 @@
 	msgReChoisir: .asciiz 	"\nChiffre saisi incorrect, \nVeuillez choisir parmis les propositions présentées\n"
 	espace: .asciiz 	"\n\n"
 	
-	temp1: .asciiz		"\nVous avez choisit le choix numero 1\n"
-	temp2: .asciiz		"\nVous avez choisit le choix numero 2\n"
+	temp1: .asciiz		"\nVous avez choisit le choix numero 1\n\n"
+	temp2: .asciiz		"\nVous avez choisit le choix numero 2\n\n"
 	temp3: .asciiz		"\nVous avez choisit de sortir\n"
 	
 	numeroCarte: .space 20
@@ -60,42 +60,64 @@ choix1:
 #------------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------
 
-	
+
+#$t2 est la variable aleatoire 
+
+#$t3 est la variable faisant office de vérificateur pour chiffre pair ou impair
+
+#$t5 est la longueur du code de carte
+
+#$t8 est le dernier chiffre du code de carte calculé initialisé à 10
+
+#$t9 est la somme de tous les chiffres
+
+
 choix2:
 	# service numero 2	
 	li $v0 4
 	la $a0 temp2
 	syscall
 	
-	li $t5 15
+	#nombre de chiffres de la carte sans comopter le dernier
+	li $t5 11
+	li $t3 1
 	
 loop:
 	beq $t5 $zero finLoop
 	
-	li $a1, 9  #Here you set $a1 to the max bound.
-    	li $v0, 42  #generates the random number.
+	li $a1, 9		#sequence pour générer un nombre aleatoire
+    	li $v0, 42  
     	syscall
-    	add $a0, $a0, 1  #Here you add the lowest bound
+    	add $a0, $a0, 1  
     	
     	li $v0, 1
 	syscall
 	
 	move $t2 $a0
 	
-	add $t9 $t9 $t2 #somme de tous les entiers aleatoires
+	beq $t3 1 chiffreImpair
+	beq $t3 2 chiffrePaire
+	
+	
+
+sommeLoop:
+	add $t9 $t9 $t2		#somme de tous les entiers aleatoires
 	
 	sub $t5 $t5 1
 	j loop
 	
 	
 
+
 finLoop:
-	li $v0 4
-	la $a0 espace
-	syscall
+
+	bgt $t9 9 modSomme
+	
+	li $t8 10
+	sub $t8 $t8 $t9
 	
 	li $v0 1
-	move $a0 $t9
+	move $a0 $t8
 	syscall
 	
 	li $v0 4
@@ -103,8 +125,36 @@ finLoop:
 	syscall
 	
 	j menu
+	
 
 
+chiffreImpair:
+	mul $t2 $t2 2
+	bgt $t2 9 moinsNeuf	#si $t2 est superieur à 9
+	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compté comme impair, et au tour d'après $t1 vaudra à nouveau 1
+	j sommeLoop
+	
+	
+moinsNeuf:
+	subi $t2 $t2 9
+	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compté comme impair, et au tour d'après $t1 vaudra à nouveau 1
+	j sommeLoop
+	
+
+
+chiffrePaire:
+	subi $t3 $t3 1
+	j sommeLoop
+
+
+modSomme:			#boucles pour faire le modulo de la derniere valeur
+	bgt $t9 10 modSommeBis
+	j finLoop
+	
+	
+modSommeBis:
+	subi $t9 $t9 10
+	j modSomme
 	
 	
 	
