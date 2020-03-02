@@ -1,46 +1,96 @@
 .data
-numeroCarte: .space 20
-successMessage: .asciiz "\nLe numero est valide!\n"
-failMessage: .asciiz "\nLe numero n'est pas valide!\n"
+	hello: .asciiz 		"\nBienvenue !\n"
+	msgChoix: .asciiz 	"\nTapez 1: saisir un numéro de carte bancaire pour en vérifier la validité\nTapez 2: Affichage d'un numero valide\nTapez 3: Quitter le programme\n\n >>>> "
+	msgReChoisir: .asciiz 	"\nChiffre saisi incorrect, \nVeuillez choisir parmis les propositions présentées\n"
+	espace: .asciiz 	"\n\n"
+	
+	temp1: .asciiz		"\nVous avez choisit le choix numero 1\n\n"
+	temp2: .asciiz		"\nVous avez choisit le choix numero 2\n\n"
+	temp3: .asciiz		"\nVous avez choisit de sortir\n"
+	
+  ###
+  
+	numeroCarte: .space 20
+  successMessage: .asciiz "\nLe numero est valide!\n"
+  failMessage: .asciiz "\nLe numero n'est pas valide!\n"
 .text
 
-# lire numero de carte (test: 376701449043032)
-li $v0, 8
-la $a0, numeroCarte
-li $a1, 20
-#move $t5, $a0
+
+# Entree dans le programme
+li $v0 4
+la $a0 hello
 syscall
 
-# afficher numero de carte
-la $a0,numeroCarte
-li $v0,4
-syscall
+menu:
+	# présentation des options
+	li $v0 4
+	la $a0 msgChoix
+	syscall
+	
+	# Choix du service par l'utilisateur enregistré dans une variable non temporaire
+	li $v0 5
+	syscall
+	move $s0 $v0
 
-# somme
-li $t0, 0 # somme
-#li $t1, 14 # nombre d'iterations
-li $t1, 0 # compteur i (commence a 14)
-li $t2, 9 # 9
-li $t3, 0 #compteur a
-li $t4, 2 #mod 2
+	# Branch au service correspondant au numero entré
+	beq $s0 1 choix1
+	beq $s0 2 choix2
+	beq $s0 3 choix3
+	
+	# Message d'erreur si le chiffre saisit est différent de 1, 2 ou 3
+	li $v0 4
+	la $a0 msgReChoisir
+	syscall
+	
+	# retour au menu tant qu'une valeur valide n'est pas saisit
+	b menu
+	
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
 
-# lire la longueur du num�ro
+choix1:
+	# service numero 1
+
+  # lire numero de carte (test: 376701449043032)
+  li $v0, 8
+  la $a0, numeroCarte
+  li $a1, 20
+  #move $t5, $a0
+  syscall
+
+  # afficher numero de carte
+  #la $a0,numeroCarte
+  #li $v0,4
+  #syscall
+
+  # somme
+  li $t0, 0 # somme
+  #li $t1, 14 # nombre d'iterations
+  li $t1, 0 # compteur i (commence a 14)
+  li $t2, 9 # 9
+  li $t3, 0 #compteur a
+  li $t4, 2 #mod 2
+  
+  j longueur # longueur du numéro
+
+# lire la longueur du numéro
 longueur:
    la $a0, numeroCarte
    addi $t0, $zero, -1 # -1 pour normaliser
    jal longueur.loop
 
 longueur.loop:
-   lb $t5, 0($a0) #charger le caractere � $a0
+   lb $t5, 0($a0) #charger le caractere à $a0
    beqz $t5, calcul #si on atteint le caractere null continuer la boucle
 
    addi $a0, $a0, 1 #incrementer la position du pointeur
    addi $t0, $t0, 1 #incrementer le compteur
 
-   j longueur.loop # on continue comme on a trouv� la longueur
+   j longueur.loop # on continue comme on a trouvé la longueur
 
 calcul:
-   addi $t1, $t0, -2 # comme on ne veut pas inclure le derniere chiffre de la carte, on soustrait 1 � la longueur 
+   addi $t1, $t0, -2 # comme on ne veut pas inclure le derniere chiffre de la carte, on soustrait 1 à la longueur 
    add $s4, $zero, $t1 # sauvegarder la valeur pour l'utiliser a la fin
    addi $t0, $zero, 0 
    move $a0, $t1
@@ -125,5 +175,119 @@ checkSuccess:
    j end
    
 end:
-    li $v0,10
-    syscall
+   b menu
+
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+
+
+#$t2 est la variable aleatoire 
+
+#$t3 est la variable faisant office de vérificateur pour chiffre pair ou impair
+
+#$t5 est la longueur du code de carte
+
+#$t8 est le dernier chiffre du code de carte calculé initialisé à 10
+
+#$t9 est la somme de tous les chiffres
+
+
+choix2:
+	# service numero 2	
+	li $v0 4
+	la $a0 temp2
+	syscall
+	
+	#nombre de chiffres de la carte sans compter le dernier
+	li $t5 11
+	li $t3 1
+	
+loop:
+	beq $t5 $zero finLoop
+	
+	li $a1, 9		#sequence pour générer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+    	add $a0, $a0, 1  
+    	
+    	li $v0, 1
+	syscall
+	
+	move $t2 $a0
+	
+	beq $t3 1 chiffreImpair
+	beq $t3 2 chiffrePaire
+	
+	
+
+sommeLoop:
+	add $t9 $t9 $t2		#somme de tous les entiers aleatoires
+	
+	sub $t5 $t5 1
+	j loop
+	
+	
+
+
+finLoop:
+
+	bgt $t9 9 modSomme
+	
+	li $t8 10
+	sub $t8 $t8 $t9
+	
+	li $v0 1
+	move $a0 $t8
+	syscall
+	
+	li $v0 4
+	la $a0 espace
+	syscall
+	
+	j menu
+	
+
+
+chiffreImpair:
+	mul $t2 $t2 2
+	bgt $t2 9 moinsNeuf	#si $t2 est superieur à 9
+	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compté comme impair, et au tour d'après $t1 vaudra à nouveau 1
+	j sommeLoop
+	
+	
+moinsNeuf:
+	subi $t2 $t2 9
+	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compté comme impair, et au tour d'après $t1 vaudra à nouveau 1
+	j sommeLoop
+	
+
+
+chiffrePaire:
+	subi $t3 $t3 1
+	j sommeLoop
+
+
+modSomme:			#boucles pour faire le modulo de la derniere valeur
+	bgt $t9 10 modSommeBis
+	j finLoop
+	
+	
+modSommeBis:
+	subi $t9 $t9 10
+	j modSomme
+	
+	
+	
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+	
+choix3:
+	# sortie du programme
+	li $v0 4
+	la $a0 temp3
+	syscall
+	
+	li $v0 10
+	syscall
