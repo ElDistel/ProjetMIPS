@@ -8,6 +8,8 @@
 	temp2: .asciiz		"\nVous avez choisit le choix numero 2\n\n"
 	temp3: .asciiz		"\nVous avez choisit de sortir\n"
 	
+	masterCard: .word 34, 37
+	
   ###
   
 	numeroCarte: .space 20
@@ -45,6 +47,13 @@ menu:
 	# retour au menu tant qu'une valeur valide n'est pas saisit
 	b menu
 	
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+
+
+
+
 #------------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------
@@ -168,6 +177,53 @@ checkSuccess:
    
 end:
    b menu
+   
+# $a1 => la $s1,A        #adresse debut de type de carte (masterCard)
+# s2 => size
+# s3 => index i
+# s5 => bool if true = found
+
+checkCardProvider:
+  addi $s3, $zero, 1 # i = 1 // . word size,value,value,...
+  la $a0, numeroCarte # numero de carte
+  
+  jalr checkCardProvider.loop
+  
+checkCardProvider.loop: # while i < $s2 (size)
+  ble $s3, $s2, getValue.endLoop
+  
+  lw $s7, ($a1) # (char* master) $s7 = tab[i];
+  move $s8, $zero # j = 0
+  move $s9, $zero # valid = 0
+  lw $t7,($a2)
+  j checkCardProvider.loop.while
+  
+checkCardProvider.loop.while:
+  beqz $t7, checkCardProvider.loop.checkFound #si on atteint le caractere null continuer la boucle
+  
+  beq 
+  
+  
+checkCardProvider.loop.checkFound:
+  bgtz $7, found # trouve!
+  # non trouve
+  j checkCardProvider.loop.incr 
+  
+  
+ checkCardProvider.loop.incr:
+  addi $a1, $a1, 4 # i + 1
+
+checkCardProvider.endLoop:
+
+
+    #Branch if i >= 5, go to END_FOR
+  
+    addi $t1, $t1, -1         #$t1=B[i]-1
+    sw $t1,($s1)              #A[i]=B[i]-1
+    addi $s1, $s1,4           #next element A[i+1]
+    addi $s2, $s2,4           #next element B[i+1]
+    addi    $s0, $s0, 1       #Add immediate value 1 to i (i++)
+    j FOR_LOOP                #Jump back to the top to loop again
 
 #------------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------
