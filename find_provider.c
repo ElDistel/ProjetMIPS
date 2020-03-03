@@ -4,18 +4,19 @@
 int main(void)
 {
 	char cardNb[] = "5663"; // $a0
-	int numeroCarte[] = {55, 56}; // $a1
+	char* numeroCarte[] = {"55", "56"}; // $a1
 	int i = 0; // $s3
 
 	while (i < 2) // checkCardProvider.loop
 	{
-		int master = numeroCarte[i]; 
+		char* master = numeroCarte[i]; 
+		int j = 0;
 		int valid = 0;
 		// $t7 = *(master + j)
-		while (master % 10 != 0) // checkCardProvider.loop.while
+		while (*(master + j) != '\0') // checkCardProvider.loop.while
 		{
 
-			if((int)cardNb[j] == master % 10)
+			if(cardNb[j] == master[j])
 			{
 				valid = 1;
 			} else {
@@ -23,7 +24,7 @@ int main(void)
 				break;
 			}
 
-			master /= 10;
+			j++;
 		}
 
 		if(valid > 0) // checkCardProvider.loop.checkFound:
