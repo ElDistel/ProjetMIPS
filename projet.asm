@@ -270,7 +270,7 @@ checkCardProvider.nonMatch:
    addiu $a1, $a1, 1
    lb $a0, ($a1)
    
-   beqz $a0, checkCardProvider.finish
+   beqz $a0, checkCardProvider.moveFinish
    bne $a0, 44, checkCardProvider.nonMatch
    
    move $s2, $zero
@@ -299,6 +299,10 @@ checkCardProvider.incr:
 checkCardProvider.isValid:
    # ?
    j checkSuccess.success
+
+checkCardProvider.moveFinish:
+   move $s2, $zero
+   j checkCardProvider.finish
 
 checkCardProvider.finish:
 
