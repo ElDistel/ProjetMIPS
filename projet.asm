@@ -1,13 +1,24 @@
 .data
 
 	hello: .asciiz 		"\nBienvenue !\n"
-	msgChoix: .asciiz 	"\nTapez 1: saisir un num�ro de carte bancaire pour en v�rifier la validit�\nTapez 2: Affichage d'un numero valide\nTapez 3: Quitter le programme\n\n >>>> "
-	msgReChoisir: .asciiz 	"\nChiffre saisi incorrect, \nVeuillez choisir parmis les propositions pr�sent�es\n"
+	msgChoix: .asciiz 	"\nTapez 1: saisir un numero de carte bancaire pour en verifier la validite\nTapez 2: Affichage d'un numero valide\nTapez 3: Quitter le programme\n\n>>>> "
+	choixCarte: .asciiz	"Choisissez quel type de carte vous voulez :\n1- American Express\n2- Diners Club\n3- Discover\n4- InstaPayment\n5- JCB\n6- Maestro\n7- MasterCard\n8- VISA\n9- VISA Electron\n>>>>"
+	msgReChoisir: .asciiz 	"\nChiffre saisi incorrect, \nVeuillez choisir parmis les propositions presentees\n"
 	espace: .asciiz 	"\n\n"
 	
 	temp1: .asciiz		"\nVous avez choisit le choix numero 1\n\n"
 	temp2: .asciiz		"\nVous avez choisit le choix numero 2\n\n"
 	temp3: .asciiz		"\nVous avez choisit de sortir\n"
+	
+	choixCarte1: .asciiz	"\nVous avez choisis le type de carte American Express\n\n>>>>"
+	choixCarte2: .asciiz	"\nVous avez choisis le type de carte Diners Club\n\n>>>>"
+	choixCarte3: .asciiz	"\nVous avez choisis le type de carte Discover \n\n>>>>"
+	choixCarte4: .asciiz	"\nVous avez choisis le type de carte InstaPayment\n\n>>>>"
+	choixCarte5: .asciiz	"\nVous avez choisis le type de carte JCB\n\n>>>>"
+	choixCarte6: .asciiz	"\nVous avez choisis le type de carte Maestro\n\n>>>>"
+	choixCarte7: .asciiz	"\nVous avez choisis le type de carte MasterCard\n\n>>>>"
+	choixCarte8: .asciiz	"\nVous avez choisis le type de carte VISA\n\n>>>>"
+	choixCarte9: .asciiz	"\nVous avez choisis le type de carte VISA Electron\n\n>>>>"
   
 	numeroCarte: .space 20
   	successMessage: .asciiz "\nLe numero est valide!\n"
@@ -192,9 +203,38 @@ choix2:
 
 	li $t2 0
 	li $t3 1
-	li $t5 11
+	li $t5 15
 	li $t8 10
 	li $t9 0
+	
+	li $v0 4
+	la $a0 choixCarte
+	syscall
+	
+	j verifCarte
+	
+	
+verifCarte:	
+	li $v0 5		# Choix du service par l'utilisateur du type de carte souhaite
+	syscall
+	move $s1 $v0
+
+	beq $s1 1 Carte1	# Branch au service correspondant a la carte
+	beq $s1 2 Carte2
+	beq $s1 3 Carte3
+	beq $s1 4 Carte4
+	beq $s1 5 Carte5
+	beq $s1 6 Carte6
+	beq $s1 7 Carte7
+	beq $s1 8 Carte8
+	beq $s1 9 Carte9
+	
+	li $v0 4
+	la $a0 msgReChoisir
+	syscall
+	
+	j verifCarte
+	
 	
 loop:
 	beq $t5 $zero finLoop
@@ -268,6 +308,67 @@ modSomme:			#boucles pour faire le modulo de la derniere valeur
 modSommeBis:
 	subi $t9 $t9 10
 	j modSomme
+	
+	
+#######################################################
+### CHOIX DES CARTES
+#######################################################	
+
+Carte1:
+	li $v0 4
+	la $a0 choixCarte1
+	syscall 
+	j loop
+	
+Carte2:
+	li $v0 4
+	la $a0 choixCarte2
+	syscall 
+	j loop
+	
+Carte3:
+	li $v0 4
+	la $a0 choixCarte3
+	syscall 
+	j loop
+	
+Carte4:
+	li $v0 4
+	la $a0 choixCarte4
+	syscall 
+	j loop
+	
+Carte5:
+	li $v0 4
+	la $a0 choixCarte5
+	syscall 
+	j loop
+	
+Carte6:
+	li $v0 4
+	la $a0 choixCarte6
+	syscall 
+	j loop
+	
+Carte7:
+	li $v0 4
+	la $a0 choixCarte7
+	syscall 
+	j loop
+
+Carte8:
+	li $v0 4
+	la $a0 choixCarte8
+	syscall 
+	j loop
+	
+Carte9:
+	li $v0 4
+	la $a0 choixCarte9
+	syscall 
+	j loop
+	
+	
 	
 	
 	
