@@ -8,9 +8,14 @@
 	temp2: .asciiz		"\nVous avez choisi le choix numero 2\n\n"
 	temp3: .asciiz		"\nVous avez choisi de sortir\n"
 	
+	
+#------------------------------------------------------------------------------------------------
+#--------------------------- Variables pour la verification d'un numero -------------------------
+#------------------------------------------------------------------------------------------------	
+	
 	# sentences
 	providerFound: .asciiz "\nL'emetteur de la carte est: "
-	providerNotFound: .asciiz "\nL'emetteur de la carte n'a pas ete trouve.\n"
+	providerNotFound: .asciiz "\nL'emetteur de la carte n'a pas ete trouve.\n"	
 	
 	# noms
 	visaName: .asciiz "Visa"
@@ -219,16 +224,7 @@ checkSuccess.continue:
 checkSuccess.success:
    li $v0, 4
    la $a0, providerFound
-   syscall
-   la $a0, espace
-   syscall
-   li $v0, 1
-   move $a0, $s5
-   syscall
-   li $v0, 4
-      la $a0, espace
-   syscall
-  
+   syscall  
    mul $s2, $s5, 4 # i * 4 pour se deplacer dans un tableau
    la $a1, cardNamesList # charger la liste des noms de carte
    addu $a1,$a1,$s2
