@@ -4,11 +4,43 @@
 	msgReChoisir: .asciiz 	"\nChiffre saisi incorrect, \nVeuillez choisir parmis les propositions pr�sent�es\n"
 	espace: .asciiz 	"\n\n"
 	
-	temp1: .asciiz		"\nVous avez choisit le choix numero 1\n\n"
-	temp2: .asciiz		"\nVous avez choisit le choix numero 2\n\n"
-	temp3: .asciiz		"\nVous avez choisit de sortir\n"
+	temp1: .asciiz		"\nVous avez choisi le choix numero 1\n\n"
+	temp2: .asciiz		"\nVous avez choisi le choix numero 2\n\n"
+	temp3: .asciiz		"\nVous avez choisi de sortir\n"
 	
-	masterCard: .word 34, 37
+	# sentences
+	providerFound: .asciiz "\nL'emetteur de la carte est: "
+	providerNotFound: .asciiz "\nL'emetteur de la carte n'a pas ete trouve.\n"
+	
+	# noms
+	visaName: .asciiz "Visa"
+	visaElectronName: .asciiz "Visa Electron"
+	masterCardName: .asciiz "MasterCard"
+	maestroName: .asciiz "Maestro"
+	americanExpressName: .asciiz "American Express"
+	dinersClubName: .asciiz "Diners Club - International"
+	discoverName: .asciiz "Discover"
+	instaPaymentName: .asciiz "InstaPayment"
+	jbcName: .asciiz "JCB"
+	
+	# emetteurs
+	visa: .asciiz "4"
+	visaElectron: .asciiz "4026,417500,4508,4844,4913,4917"
+	masterCard: .asciiz "51,52,53,54,55"
+	maestro: .asciiz "5018,5020,5038,2893,6304,6759,6781,6762,6763"
+	americanExpress: .asciiz "34,37"
+	dinersClub: .asciiz "36"
+	discover: .asciiz "6011,644,645,646,647,648,649,65"
+	instaPayment: .asciiz "637,638,639"
+	
+	# emetteurs plages
+	discoverRange: .word 622126, 622925
+	jcbRange: .word 3528, 3589
+	masterCardRange: .word 222100, 272099
+
+	# listes
+	cardList: .word visaElectron, visa, masterCard, maestro, americanExpress, dinersClub, discover, instaPayment
+	cardNamesList: .word visaElectronName, visaName, masterCardName, maestroName, americanExpressName, dinersClubName, discoverName, instaPaymentName
 	
   ###
   
@@ -65,17 +97,10 @@ choix1:
   li $v0, 8
   la $a0, numeroCarte
   li $a1, 20
-  #move $t5, $a0
   syscall
-
-  # afficher numero de carte
-  #la $a0,numeroCarte
-  #li $v0,4
-  #syscall
 
   # somme
   li $t0, 0 # somme
-  #li $t1, 14 # nombre d'iterations
   li $t1, 0 # compteur i (commence a 14)
   li $t2, 9 # 9
   li $t3, 0 #compteur a
@@ -83,7 +108,7 @@ choix1:
   
   j longueur # longueur du numero
 
-# lire la longueur du numÃ©ro
+# lire la longueur du numero
 longueur:
    la $a0, numeroCarte
    addi $t0, $zero, -1 # -1 pour normaliser
@@ -96,7 +121,7 @@ longueur.loop:
    addi $a0, $a0, 1 #incrementer la position du pointeur
    addi $t0, $t0, 1 #incrementer le compteur
 
-   j longueur.loop # on continue comme on a trouvÃ© la longueur
+   j longueur.loop # on continue comme on a trouve la longueur
 
 calcul:
    addi $t1, $t0, -2 # comme on ne veut pas inclure le derniere chiffre de la carte, on soustrait 1 a la longueur 
@@ -172,58 +197,114 @@ check:
 checkSuccess:
    la $a0, successMessage
    syscall
+     
+   li $s5, 0 # i
    
+   j checkSuccess.loop
+   
+checkSuccess.loop:
+   mul $s2, $s5, 4 # i * 4 pour se deplacer dans un tableau
+   la $a0, cardList # charger la liste de cartes
+   addu $a0,$a0,$s2
+   lw $a1, ($a0) # $a1 est les nombre de debut des cartes bancaires
+   j checkCardProvider
+
+checkSuccess.continue:
+   # on continue dans les type de cartes
+   addi $s5,$s5,1
+   ble $s5, 8, checkSuccess.loop
+   
+   j checkSuccess.end
+   
+checkSuccess.success:
+   li $v0, 4
+   la $a0, providerFound
+   syscall
+   la $a0, espace
+   syscall
+   li $v0, 1
+   move $a0, $s5
+   syscall
+   li $v0, 4
+      la $a0, espace
+   syscall
+  
+   mul $s2, $s5, 4 # i * 4 pour se deplacer dans un tableau
+   la $a1, cardNamesList # charger la liste des noms de carte
+   addu $a1,$a1,$s2
+   lw $a0, ($a1) # $a1 est les nombre de debut des cartes bancaires
+   syscall
+   j end
+ 
+checkSuccess.end:
+   # checker les plages
+   li $v0, 4
+   la $a0, providerNotFound
+   syscall
+   la $a0, espace
+   syscall
    j end
    
 end:
    b menu
    
-# $a1 => la $s1,A        #adresse debut de type de carte (masterCard)
-# s2 => size
-# s3 => index i
-# s5 => bool if true = found
-
+# variables obligatoires de la fonction:
+# => $a1 = chiffres de debut specifiques a la carte
 checkCardProvider:
-  addi $s3, $zero, 1 # i = 1 // . word size,value,value,...
-  la $a0, numeroCarte # numero de carte
-  
-  jalr checkCardProvider.loop
-  
-checkCardProvider.loop: # while i < $s2 (size)
-  ble $s3, $s2, getValue.endLoop
-  
-  lw $s7, ($a1) # (char* master) $s7 = tab[i];
-  move $s8, $zero # j = 0
-  move $s9, $zero # valid = 0
-  lw $t7,($a2)
-  j checkCardProvider.loop.while
-  
-checkCardProvider.loop.while:
-  beqz $t7, checkCardProvider.loop.checkFound #si on atteint le caractere null continuer la boucle
-  
-  beq 
-  
-  
-checkCardProvider.loop.checkFound:
-  bgtz $7, found # trouve!
-  # non trouve
-  j checkCardProvider.loop.incr 
-  
-  
- checkCardProvider.loop.incr:
-  addi $a1, $a1, 4 # i + 1
+   li $s2, 0 # match = false
+   lb $a0, 0($a1)
+   la $a2, numeroCarte
 
-checkCardProvider.endLoop:
+checkCardProvider.loop:
+   beqz $a0, checkCardProvider.finish # si 0 , refaire check a la fin
+   beq $a0, 44, checkCardProvider.virgule #si trouve une virgule
+   
+   lb $s1, ($a2)
+     
+   beq $s1, $a0, checkCardProvider.match # si caractere est egal
+   
+   j checkCardProvider.nonMatch
+   
+   # non match
+checkCardProvider.nonMatch:
+   addiu $a1, $a1, 1
+   lb $a0, ($a1)
+   
+   beqz $a0, checkCardProvider.finish
+   bne $a0, 44, checkCardProvider.nonMatch
+   
+   move $s2, $zero
+   
+   j checkCardProvider.loop
+   
+checkCardProvider.match:
+   addiu $s2, $zero, 1
+   addiu $a2, $a2, 1
+   
+   j checkCardProvider.incr
+   
+checkCardProvider.virgule:
+   bgt $s2, $zero, checkCardProvider.isValid # si les numeros sont valides on accepte
+   # sinon on met a 0 l'index du code de la carte
+   la $a2, numeroCarte
+   move $s2, $zero
 
+   j checkCardProvider.incr
 
-    #Branch if i >= 5, go to END_FOR
-  
-    addi $t1, $t1, -1         #$t1=B[i]-1
-    sw $t1,($s1)              #A[i]=B[i]-1
-    addi $s1, $s1,4           #next element A[i+1]
-    addi $s2, $s2,4           #next element B[i+1]
-    addi    $s0, $s0, 1       #Add immediate value 1 to i (i++)
-    j FOR_LOOP                #Jump back to the top to loop again
+checkCardProvider.incr:
+   addiu $a1, $a1, 1
+   lb $a0, ($a1)
+   j checkCardProvider.loop
+   
+checkCardProvider.isValid:
+   # ?
+   j checkSuccess.success
+
+checkCardProvider.finish:
+
+   bgt $s2, $zero, checkCardProvider.isValid
+
+   j checkSuccess.continue
 
 #------------------------------------------------------------------------------------------------
 #------------------------------------------------------------------------------------------------
@@ -299,8 +380,8 @@ finLoop:
 
 chiffreImpair:
 	mul $t2 $t2 2
-	bgt $t2 9 moinsNeuf	#si $t2 est superieur Ã  9
-	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit comptÃ© comme impair, et au tour d'aprÃ¨s $t1 vaudra Ã  nouveau 1
+	bgt $t2 9 moinsNeuf	#si $t2 est superieur a� 9
+	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compte comme impair, et au tour d'aprÃ¨s $t1 vaudra Ã  nouveau 1
 	j sommeLoop
 	
 	
