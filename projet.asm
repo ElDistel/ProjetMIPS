@@ -5,22 +5,24 @@
 	choixCarte: .asciiz	"Choisissez quel type de carte vous voulez :\n1- American Express\n2- Diners Club\n3- Discover\n4- InstaPayment\n5- JCB\n6- Maestro\n7- MasterCard\n8- VISA\n9- VISA Electron\n>>>>"
 	msgReChoisir: .asciiz 	"\nChiffre saisi incorrect, \nVeuillez choisir parmis les propositions presentees\n"
 	espace: .asciiz 	"\n\n"
+	msgTaille16a19: .asciiz 	"\nVeuillez entrer la taille du code souhaitee entre 16 et 19, tapez 1 pour choisir aleatoirement\n>>>>"
+	msgTaille13ou16ou19: .asciiz	"\nVeuillez entrer la taille du code souhaitee entre 13, 16 ou 19, tapez 1 pour choisir aleatoirement\n>>>>"
 	
 	temp1: .asciiz		"\nVous avez choisit le choix numero 1\n\n"
 	temp2: .asciiz		"\nVous avez choisit le choix numero 2\n\n"
 	temp3: .asciiz		"\nVous avez choisit de sortir\n"
 	
-	choixCarte1: .asciiz	"\nVous avez choisis le type de carte American Express\n\n>>>>"
-	choixCarte2: .asciiz	"\nVous avez choisis le type de carte Diners Club\n\n>>>>"
-	choixCarte3: .asciiz	"\nVous avez choisis le type de carte Discover \n\n>>>>"
-	choixCarte4: .asciiz	"\nVous avez choisis le type de carte InstaPayment\n\n>>>>"
-	choixCarte5: .asciiz	"\nVous avez choisis le type de carte JCB\n\n>>>>"
-	choixCarte6: .asciiz	"\nVous avez choisis le type de carte Maestro\n\n>>>>"
-	choixCarte7: .asciiz	"\nVous avez choisis le type de carte MasterCard\n\n>>>>"
-	choixCarte8: .asciiz	"\nVous avez choisis le type de carte VISA\n\n>>>>"
-	choixCarte9: .asciiz	"\nVous avez choisis le type de carte VISA Electron\n\n>>>>"
+	choixCarte1: .asciiz	"\nVous avez choisis le type de carte American Express, carte a 15 chiffres\n\n>>>>"
+	choixCarte2: .asciiz	"\nVous avez choisis le type de carte Diners Club, carte a 14 chiffres\n\n>>>>"
+	choixCarte3: .asciiz	"\nVous avez choisis le type de carte Discover \n\n"
+	choixCarte4: .asciiz	"\nVous avez choisis le type de carte InstaPayment, carte a 16 chiffres\n\n>>>>"
+	choixCarte5: .asciiz	"\nVous avez choisis le type de carte JCB\n\n"
+	choixCarte6: .asciiz	"\nVous avez choisis le type de carte Maestro\n\n"
+	choixCarte7: .asciiz	"\nVous avez choisis le type de carte MasterCard, carte a 16 chiffres\n\n>>>>"
+	choixCarte8: .asciiz	"\nVous avez choisis le type de carte VISA\n\n"
+	choixCarte9: .asciiz	"\nVous avez choisis le type de carte VISA Electron, carte a 16 chiffres\n\n>>>>"
 	
-	carte1: .word 34,37
+	carte1: .word 304,307
 	carte2: .word 36
 	carte3: .word 6011, 644, 645, 646, 647, 648, 649, 65
 	carte4: .word 637, 638, 639
@@ -194,13 +196,15 @@ end:
 #------------------------------------------------------------------------------------------------
 
 
-#$t2 est la variable aleatoire 
+#$t1 est une adresse temporaire
 
 #$t3 est la variable faisant office de verificateur pour chiffre pair ou impair
 
 #$t4 est la variable contenant la determination aleatoire du debut du code de carte
 
 #$t5 est la longueur du code de carte a generer
+
+#$t6 est un compteur utilise lors du traitement du debut de code de carte par defaut
 
 #$t7 est le debut de carte genere aleatoirement
 
@@ -215,10 +219,8 @@ choix2:
 	la $a0 temp2
 	syscall
 
-	li $t2 0
 	li $t3 1
-	li $t5 15
-	li $t8 10
+	li $t5 15		#on donne un nombre par defaut pour un code a 16 chiffres
 	li $t9 0
 	
 	li $v0 4
@@ -266,23 +268,24 @@ loop:
     	li $v0, 1
 	syscall
 	
-	move $t2 $a0
+	move $t6 $a0
 	
-	beq $t3 1 chiffreImpair
-	beq $t3 2 chiffrePair
-	
+	jal verifParite
+	j sommeLoop
 	
 
 sommeLoop:
-	add $t9 $t9 $t2		#somme de tous les entiers aleatoires
+	add $t9 $t9 $t6		#somme de tous les entiers aleatoires
 	
 	sub $t5 $t5 1
 	j loop
 	
 
 
-finLoop:	
-	bgt $t9 9 modSomme
+finLoop:
+	bgt $t9 10 modSomme
+	
+	li $t8 10
 	
 	sub $t8 $t8 $t9
 	
@@ -299,27 +302,32 @@ finLoop:
 	
 
 
+verifParite:
+	beq $t3 1 chiffreImpair
+	beq $t3 2 chiffrePair
+
+
 chiffreImpair:
-	mul $t2 $t2 2
-	bgt $t2 9 moinsNeuf	#si $t2 est superieur a 9
+	mul $t6 $t6 2
+	bgt $t6 9 moinsNeuf	#si $t6 est superieur a 9
+chiffreImpairSuite:
 	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compte comme impair, et au tour d'apres $t1 vaudra a  nouveau 1
-	j sommeLoop
+	jr $ra
 	
 	
 moinsNeuf:
-	subi $t2 $t2 9
-	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compte comme impair, et au tour d'apres $t1 vaudra a  nouveau 1
-	j sommeLoop
+	subi $t6 $t6 9
+	j chiffreImpairSuite
 	
 
 
 chiffrePair:
 	subi $t3 $t3 1
-	j sommeLoop
+	jr $ra
 
 
 modSomme:			#boucles pour faire le modulo de la derniere valeur
-	bgt $t9 9 modSommeBis
+	bgt $t9 10 modSommeBis
 	j finLoop
 	
 	
@@ -337,6 +345,8 @@ Carte1init:
 	li $v0 4
 	la $a0 choixCarte1
 	syscall
+	
+	li $t5 15		#nombre de  chiffres du code American express
 	
 	li $a1, 1		#sequence pour generer un nombre aleatoire
     	li $v0, 42  
@@ -364,6 +374,8 @@ Carte2init:
 	li $v0 4
 	la $a0 choixCarte2
 	syscall
+	
+	li $t5 14		#nombre de  chiffres du code Diners Club
 
 	la $a1 carte2
 	lw $a0 ($a1)
@@ -383,7 +395,9 @@ Carte3init:
 	la $a0 choixCarte3
 	syscall
 	
-	li $a1, 7		#sequence pour generer un nombre aleatoire
+	jal choixTaille16a19
+	
+	li $a1, 7		
     	li $v0, 42  
     	syscall
 	add $a0, $a0, 0
@@ -435,6 +449,8 @@ Carte5init:
 	la $a0 choixCarte5
 	syscall
 	
+	jal choixTaille16a19
+	
 	li $a1, 2		#sequence pour generer un nombre aleatoire
     	li $v0, 42  
     	syscall
@@ -460,6 +476,8 @@ Carte6init:
 	li $v0 4
 	la $a0 choixCarte6
 	syscall
+	
+	jal choixTaille16a19
 	
 	li $a1, 8		#sequence pour generer un nombre aleatoire
     	li $v0, 42  
@@ -513,10 +531,12 @@ Carte8init:				# Pas besoin d'autres boucles ou fonctions pour uniquement un 4 e
 	la $a0 choixCarte8
 	syscall
 	
-	li $t2 4
+	jal choixTaille13ou16ou19
+	
+	li $t6 4
 	
 	li $v0 1
-	move $a0 $t2
+	move $a0 $t6
 	syscall
 	
 	beq $t3 1 chiffreImpair
@@ -547,62 +567,119 @@ Carte9init:
 	j loop
 	
 	
+#######################################################
+### SEQUENCE DE GESTION DU CHOIX DE LA TAILLE
+###
+###
+### L'utilisateur va ici choisir en fonction
+### du nombre de chiffres possibles de la carte
+### choisie au prealable combien de chiffre il veut
+### pour le code genere
+#######################################################	
 	
+	
+choixTaille16a19:
+	li $v0 4
+	la $a0 msgTaille16a19
+	syscall
+	
+	li $v0 5
+	syscall
+	move $t8 $v0
+	
+	beq $t8 1 alea16a19
+	beq $t8 16 choixTaille16
+	beq $t8 17 choixTaille17
+	beq $t8 18 choixTaille18
+	beq $t8 19 choixTaille19
+	
+	li $v0 4
+	la $a0 msgReChoisir
+	syscall
+	
+	j choixTaille16a19	#taille - 1 car le dernier chiffre sera la difference du modulo de la somme
+	
+	
+choixTaille13ou16ou19:
+	li $v0 4
+	la $a0 msgTaille13ou16ou19
+	syscall
+	
+	li $v0 5
+	syscall
+	move $t8 $v0
+	
+	beq $t8 1 alea13ou16ou19
+	beq $t8 13 choixTaille13
+	beq $t8 16 choixTaille16
+	beq $t8 19 choixTaille19
+	
+	li $v0 4
+	la $a0 msgReChoisir
+	syscall
+	
+	j choixTaille13ou16ou19	#taille - 1 car le dernier chiffre sera la difference du modulo de la somme
+	
+	
+alea16a19:
+	li $a1, 18		#sequence pour generer un nombre aleatoire qui sera la taille du code a generer
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 15
+	
+	move $t5 $a0
+	jr $ra	
+alea13ou16ou19:
+	li $a1, 3		#sequence pour generer un nombre aleatoire qui sera la taille du code a generer
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 0
+	
+	move $t5 $a0		#on prend un nombre entre 0 et 2, le mutliplie par 3 et lui ajoute 13 ce qui donne 13, 16 ou 19
+	mul $t5 $t5 3
+	addi $t5 $t5 13
+	jr $ra	
+choixTaille13:
+	li $t5 12
+	li $t3 2
+	jr $ra
+choixTaille16:
+	li $t5 15
+	jr $ra
+choixTaille17:
+	li $t5 16
+	li $t3 2
+	jr $ra
+choixTaille18:
+	li $t5 17
+	jr $ra
+choixTaille19:
+	li $t5 18
+	li $t3 2
+	jr $ra
+
+	
+	
+#######################################################
+### SEQUENCE DE GESTION DE LA SOMME AVEC LE DEBUT DE CARTE
+###
+###
+### le nombre entre dans la boucle en fonction
+### de son ordre de grandeur puis
+### se voit etre decremente jusqu'a ce qu'il soit nul
+### chaque valeur des unites, dizaine, centaines, ect
+### sera incrementee dans la somme totale.
+#######################################################	
 	
 nbrVerifRegister:
 	move $t1 $ra
 	j nbrVerif
 
-nbrVerif:
-	li $t6 0
-	bgt $t7 999 sup999	#on met dans la somme la valeur des milliers
-	bgt $t7 99 sup99	#on met dans la somme la valeur des centaines
-	bgt $t7 9 sup9		#on met dans la somme la valeur des dizaines
-	bgt $t7 0 sup0		#on met dans la somme la valeur des dizaines	
-	jr $t1
-	
-	
-
-	
-sup0:
-	bgt $t7 0 sup0bis
-	subi $t5 $t5 1
-	jal verifParite
-	add $t9 $t9 $t6
-	j nbrVerif
-	
-sup0bis:	
-	subi $t7 $t7 1
-	addi $t6 $t6 1	
-	j sup0
-		
-	
-	
-sup9:
-	bgt $t7 9 sup9bis
-	subi $t5 $t5 1
-	jal verifParite
-	add $t9 $t9 $t6
-	j nbrVerif
-	
-sup9bis:	
-	subi $t7 $t7 10
-	addi $t6 $t6 1	
-	j sup9
-	
-	
-
-sup99:
-	bgt $t7 99 sup99bis
-	subi $t5 $t5 1
-	jal verifParite
-	add $t9 $t9 $t6
-	j nbrVerif
-	
-sup99bis:	
-	subi $t7 $t7 100
-	addi $t6 $t6 1	
-	j sup99
+nbrVerif:				#ordre de grandeur dans lequel le nombre entre dans la boucle
+	bgt $t7 999 sup999	
+	bgt $t7 99 sup99	
+	bgt $t7 9 sup9	
+	bgt $t7 0 sup0		
 	
 	
 sup999:
@@ -610,40 +687,55 @@ sup999:
 	subi $t5 $t5 1
 	jal verifParite
 	add $t9 $t9 $t6
-	j nbrVerif
+	li $t6 0
+	j sup99
 	
 sup999bis:	
 	subi $t7 $t7 1000
 	addi $t6 $t6 1	
 	j sup999
 	
-
-
-
-verifParite:
-	beq $t3 1 chiffreImpairCarte
-	beq $t3 2 chiffrePairCarte
 	
-
-
-chiffreImpairCarte:
-	mul $t6 $t6 2
-	bgt $t6 9 moinsNeufCarte	#si $t2 est superieur a 9
-chiffreImpairCarteSuite:
-	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compte comme impair, et au tour d'apres $t1 vaudra a  nouveau 1
-	jr $ra
+sup99:
+	bgt $t7 99 sup99bis
+	subi $t5 $t5 1
+	jal verifParite
+	add $t9 $t9 $t6
+	li $t6 0
+	j sup9
+	
+sup99bis:	
+	subi $t7 $t7 100
+	addi $t6 $t6 1	
+	j sup99
 	
 	
-moinsNeufCarte:
-	subi $t6 $t6 9
-	j chiffreImpairCarteSuite
+sup9:
+	bgt $t7 9 sup9bis
+	subi $t5 $t5 1
+	jal verifParite
+	add $t9 $t9 $t6
+	li $t6 0
+	j sup0
 	
+sup9bis:	
+	subi $t7 $t7 10
+	addi $t6 $t6 1	
+	j sup9
 
 
-chiffrePairCarte:
-	subi $t3 $t3 1
-	jr $ra
+sup0:
+	bgt $t7 0 sup0bis
+	subi $t5 $t5 1
+	jal verifParite
+	add $t9 $t9 $t6
+	li $t6 0
+	jr $t1				#retour a l'endroit ou la fonction a ete appelee a l'origine
 	
+sup0bis:	
+	subi $t7 $t7 1
+	addi $t6 $t6 1	
+	j sup0
 	
 	
 #------------------------------------------------------------------------------------------------
