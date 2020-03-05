@@ -19,6 +19,16 @@
 	choixCarte7: .asciiz	"\nVous avez choisis le type de carte MasterCard\n\n>>>>"
 	choixCarte8: .asciiz	"\nVous avez choisis le type de carte VISA\n\n>>>>"
 	choixCarte9: .asciiz	"\nVous avez choisis le type de carte VISA Electron\n\n>>>>"
+	
+	carte1: .word 34,37
+	carte2: .word 36
+	carte3: .word 6011, 644, 645, 646, 647, 648, 649, 65
+	carte4: .word 637, 638, 639
+	carte5: .word 3528, 3589
+	carte6: .word 5018, 5020, 5038, 2893, 6304, 6759, 6781, 6762, 6763
+	carte7: .word 51, 52, 53, 54, 55
+	# la carte 8 commence uniquement par 4 donc pas besoin de le stocker en .word
+	carte9: .word 4026, 417500, 4508, 4844, 4913, 4917
   
 	numeroCarte: .space 20
   	successMessage: .asciiz "\nLe numero est valide!\n"
@@ -39,7 +49,7 @@ menu:
 	la $a0 msgChoix
 	syscall
 	
-	# Choix du service par l'utilisateur enregistre dans une variable non temporaire
+	# Choix du service par l'utilisateur
 	li $v0 5
 	syscall
 	move $s0 $v0
@@ -188,7 +198,11 @@ end:
 
 #$t3 est la variable faisant office de verificateur pour chiffre pair ou impair
 
+#$t4 est la variable contenant la determination aleatoire du debut du code de carte
+
 #$t5 est la longueur du code de carte a generer
+
+#$t7 est le debut de carte genere aleatoirement
 
 #$t8 est le dernier chiffre du code de carte calcule initialise a  10
 
@@ -211,38 +225,43 @@ choix2:
 	la $a0 choixCarte
 	syscall
 	
+	li $v0 5		# Choix du service par l'utilisateur du type de carte souhaite
+	syscall
+	move $s0 $v0
+	
 	j verifCarte
 	
 	
-verifCarte:	
-	li $v0 5		# Choix du service par l'utilisateur du type de carte souhaite
-	syscall
-	move $s1 $v0
-
-	beq $s1 1 Carte1	# Branch au service correspondant a la carte
-	beq $s1 2 Carte2
-	beq $s1 3 Carte3
-	beq $s1 4 Carte4
-	beq $s1 5 Carte5
-	beq $s1 6 Carte6
-	beq $s1 7 Carte7
-	beq $s1 8 Carte8
-	beq $s1 9 Carte9
+verifCarte:
+	beq $s0 1 Carte1init	# Branch au service correspondant a la carte
+	beq $s0 2 Carte2init
+	beq $s0 3 Carte3init
+	beq $s0 4 Carte4init
+	beq $s0 5 Carte5init
+	beq $s0 6 Carte6init
+	beq $s0 7 Carte7init
+	beq $s0 8 Carte8init
+	beq $s0 9 Carte9init
 	
 	li $v0 4
 	la $a0 msgReChoisir
 	syscall
 	
+	li $v0 5		# Choix du service par l'utilisateur du type de carte souhaite
+	syscall
+	move $s0 $v0
+	
 	j verifCarte
 	
 	
-loop:
+loop:	
 	beq $t5 $zero finLoop
 	
 	li $a1, 9		#sequence pour generer un nombre aleatoire
     	li $v0, 42  
     	syscall
-	add $a0, $a0, 1  
+	add $a0, $a0, 0  
+
     	
     	li $v0, 1
 	syscall
@@ -250,7 +269,7 @@ loop:
 	move $t2 $a0
 	
 	beq $t3 1 chiffreImpair
-	beq $t3 2 chiffrePaire
+	beq $t3 2 chiffrePair
 	
 	
 
@@ -260,13 +279,11 @@ sommeLoop:
 	sub $t5 $t5 1
 	j loop
 	
-	
 
 
-finLoop:
-
+finLoop:	
 	bgt $t9 9 modSomme
-
+	
 	sub $t8 $t8 $t9
 	
 	li $v0 1
@@ -276,6 +293,7 @@ finLoop:
 	li $v0 4
 	la $a0 espace
 	syscall
+	
 	
 	j menu
 	
@@ -295,7 +313,7 @@ moinsNeuf:
 	
 
 
-chiffrePaire:
+chiffrePair:
 	subi $t3 $t3 1
 	j sommeLoop
 
@@ -314,61 +332,317 @@ modSommeBis:
 ### CHOIX DES CARTES
 #######################################################	
 
-Carte1:
+
+Carte1init:
 	li $v0 4
 	la $a0 choixCarte1
-	syscall 
+	syscall
+	
+	li $a1, 1		#sequence pour generer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 0
+	
+	mul $t4 $a0 4
+	la $a1 carte1
+	add $a1 $a1 $t4
+	lw $a0 ($a1)
+
+	move $t7 $a0
+	
+	li $v0 1
+	move $a0 $t7
+	syscall
+	
+	jal nbrVerifRegister
 	j loop
 	
-Carte2:
+	
+	
+	
+Carte2init:
 	li $v0 4
 	la $a0 choixCarte2
-	syscall 
+	syscall
+
+	la $a1 carte2
+	lw $a0 ($a1)
+
+	move $t7 $a0
+	
+	li $v0 1
+	move $a0 $t7
+	syscall
+	
+	jal nbrVerifRegister
 	j loop
 	
-Carte3:
+
+Carte3init:
 	li $v0 4
 	la $a0 choixCarte3
-	syscall 
+	syscall
+	
+	li $a1, 7		#sequence pour generer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 0
+	
+	mul $t4 $a0 4
+	la $a1 carte3
+	add $a1 $a1 $t4
+	lw $a0 ($a1)
+
+	move $t7 $a0
+	
+	li $v0 1
+	move $a0 $t7
+	syscall
+	
+	jal nbrVerifRegister
 	j loop
 	
-Carte4:
+	
+	
+	
+Carte4init:
 	li $v0 4
 	la $a0 choixCarte4
-	syscall 
+	syscall
+	
+	li $a1, 3		#sequence pour generer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 0
+	
+	mul $t4 $a0 4
+	la $a1 carte4
+	add $a1 $a1 $t4
+	lw $a0 ($a1)
+
+	move $t7 $a0
+	
+	li $v0 1
+	move $a0 $t7
+	syscall
+	
+	jal nbrVerifRegister
 	j loop
 	
-Carte5:
+	
+Carte5init:
 	li $v0 4
 	la $a0 choixCarte5
-	syscall 
+	syscall
+	
+	li $a1, 2		#sequence pour generer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 0
+	
+	mul $t4 $a0 4
+	la $a1 carte5
+	add $a1 $a1 $t4
+	lw $a0 ($a1)
+
+	move $t7 $a0
+	
+	li $v0 1
+	move $a0 $t7
+	syscall
+	
+	jal nbrVerifRegister
 	j loop
 	
-Carte6:
+	
+	
+Carte6init:
 	li $v0 4
 	la $a0 choixCarte6
-	syscall 
+	syscall
+	
+	li $a1, 8		#sequence pour generer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 0
+	
+	mul $t4 $a0 4
+	la $a1 carte6
+	add $a1 $a1 $t4
+	lw $a0 ($a1)
+
+	move $t7 $a0
+	
+	li $v0 1
+	move $a0 $t7
+	syscall
+	
+	jal nbrVerifRegister
 	j loop
 	
-Carte7:
+	
+	
+Carte7init:
 	li $v0 4
 	la $a0 choixCarte7
-	syscall 
+	syscall
+	
+	li $a1, 4		#sequence pour generer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 0
+	
+	mul $t4 $a0 4
+	la $a1 carte7
+	add $a1 $a1 $t4
+	lw $a0 ($a1)
+
+	move $t7 $a0
+	
+	li $v0 1
+	move $a0 $t7
+	syscall
+	
+	jal nbrVerifRegister
 	j loop
 
-Carte8:
+
+
+Carte8init:				# Pas besoin d'autres boucles ou fonctions pour uniquement un 4 en debut de code
 	li $v0 4
 	la $a0 choixCarte8
-	syscall 
-	j loop
+	syscall
 	
-Carte9:
+	li $t2 4
+	
+	li $v0 1
+	move $a0 $t2
+	syscall
+	
+	beq $t3 1 chiffreImpair
+	
+	
+Carte9init:
 	li $v0 4
 	la $a0 choixCarte9
-	syscall 
+	syscall
+	
+	li $a1, 5		#sequence pour generer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 0
+	
+	mul $t4 $a0 4
+	la $a1 carte9
+	add $a1 $a1 $t4
+	lw $a0 ($a1)
+
+	move $t7 $a0
+	
+	li $v0 1
+	move $a0 $t7
+	syscall
+	
+	jal nbrVerifRegister
 	j loop
 	
 	
+	
+	
+nbrVerifRegister:
+	move $t1 $ra
+	j nbrVerif
+
+nbrVerif:
+	li $t6 0
+	bgt $t7 999 sup999	#on met dans la somme la valeur des milliers
+	bgt $t7 99 sup99	#on met dans la somme la valeur des centaines
+	bgt $t7 9 sup9		#on met dans la somme la valeur des dizaines
+	bgt $t7 0 sup0		#on met dans la somme la valeur des dizaines	
+	jr $t1
+	
+	
+
+	
+sup0:
+	bgt $t7 0 sup0bis
+	subi $t5 $t5 1
+	jal verifParite
+	add $t9 $t9 $t6
+	j nbrVerif
+	
+sup0bis:	
+	subi $t7 $t7 1
+	addi $t6 $t6 1	
+	j sup0
+		
+	
+	
+sup9:
+	bgt $t7 9 sup9bis
+	subi $t5 $t5 1
+	jal verifParite
+	add $t9 $t9 $t6
+	j nbrVerif
+	
+sup9bis:	
+	subi $t7 $t7 10
+	addi $t6 $t6 1	
+	j sup9
+	
+	
+
+sup99:
+	bgt $t7 99 sup99bis
+	subi $t5 $t5 1
+	jal verifParite
+	add $t9 $t9 $t6
+	j nbrVerif
+	
+sup99bis:	
+	subi $t7 $t7 100
+	addi $t6 $t6 1	
+	j sup99
+	
+	
+sup999:
+	bgt $t7 999 sup999bis
+	subi $t5 $t5 1
+	jal verifParite
+	add $t9 $t9 $t6
+	j nbrVerif
+	
+sup999bis:	
+	subi $t7 $t7 1000
+	addi $t6 $t6 1	
+	j sup999
+	
+
+
+
+verifParite:
+	beq $t3 1 chiffreImpairCarte
+	beq $t3 2 chiffrePairCarte
+	
+
+
+chiffreImpairCarte:
+	mul $t6 $t6 2
+	bgt $t6 9 moinsNeufCarte	#si $t2 est superieur a 9
+chiffreImpairCarteSuite:
+	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compte comme impair, et au tour d'apres $t1 vaudra a  nouveau 1
+	jr $ra
+	
+	
+moinsNeufCarte:
+	subi $t6 $t6 9
+	j chiffreImpairCarteSuite
+	
+
+
+chiffrePairCarte:
+	subi $t3 $t3 1
+	jr $ra
 	
 	
 	
