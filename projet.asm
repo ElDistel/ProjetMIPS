@@ -541,6 +541,8 @@ Carte8init:				# Pas besoin d'autres boucles ou fonctions pour uniquement un 4 e
 	la $a0 choixCarte8
 	syscall
 	
+	jal choixTaille13ou16ou19
+	
 	li $t7 4
 	
 	li $v0 1
@@ -699,7 +701,15 @@ alea13ou16ou19:
 	
 	move $t5 $a0		#on prend un nombre entre 0 et 2, le mutliplie par 3 et lui ajoute 13 ce qui donne 13, 16 ou 19
 	mul $t5 $t5 3
-	addi $t5 $t5 13
+	addi $t5 $t5 12
+	
+	li $v0 1
+	move $a0 $t5
+	syscall
+	
+	li $v0 4
+	la $a0 espace
+	syscall
 	
 	beq $t5 17 choixTaille17
 	beq $t5 18 choixTaille18
