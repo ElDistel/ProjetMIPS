@@ -22,13 +22,13 @@
 	choixCarte8: .asciiz	"\nVous avez choisis le type de carte VISA\n\n"
 	choixCarte9: .asciiz	"\nVous avez choisis le type de carte VISA Electron, carte a 16 chiffres\n\n>>>>"
 	
-	carte1: .word 304,307
+	carte1: .word 34,37
 	carte2: .word 36
-	carte3: .word 6011, 644, 645, 646, 647, 648, 649, 65
+	carte3: .word 6011, 644, 645, 646, 647, 648, 649, 65, 622126 #jusqu'a 622925
 	carte4: .word 637, 638, 639
-	carte5: .word 3528, 3589
+	# la carte 5 est entierement une plage donc on genere son debut par ma sequence gestion de plage
 	carte6: .word 5018, 5020, 5038, 2893, 6304, 6759, 6781, 6762, 6763
-	carte7: .word 51, 52, 53, 54, 55
+	carte7: .word 51, 52, 53, 54, 55, 222100
 	# la carte 8 commence uniquement par 4 donc pas besoin de le stocker en .word
 	carte9: .word 4026, 417500, 4508, 4844, 4913, 4917
   
@@ -256,6 +256,16 @@ verifCarte:
 	j verifCarte
 	
 	
+#######################################################
+### LOOP DE VALEURS ALEATOIRES
+###
+###
+### Ce loop est celui qui genere tous les
+### nombres aleatoires apres le debut choisit par 
+### l'utilisateur en fonction de la carte
+#######################################################
+	
+	
 loop:	
 	beq $t5 $zero finLoop
 	
@@ -300,6 +310,15 @@ finLoop:
 	
 	j menu
 	
+	
+#######################################################
+### OPERATIONS DE PARITE ET MODULO
+###
+###
+### Cette sections regroupe toutes les operations
+### de parite qui seront utilisees par le
+#######################################################
+	
 
 
 verifParite:
@@ -338,7 +357,14 @@ modSommeBis:
 	
 #######################################################
 ### CHOIX DES CARTES
-#######################################################	
+###
+###
+### Initialisation du debut du code en fonction 
+### de l'indice du tableau de valeurs choisit 
+### par l'utilisateur puis un retour au loop
+### classique avec generation d'un autre nombre 
+### aleatoire a chaque tour
+#######################################################
 
 
 Carte1init:
@@ -348,7 +374,7 @@ Carte1init:
 	
 	li $t5 15		#nombre de  chiffres du code American express
 	
-	li $a1, 1		#sequence pour generer un nombre aleatoire
+	li $a1, 2		#sequence pour generer un nombre aleatoire
     	li $v0, 42  
     	syscall
 	add $a0, $a0, 0
@@ -356,10 +382,8 @@ Carte1init:
 	mul $t4 $a0 4
 	la $a1 carte1
 	add $a1 $a1 $t4
-	lw $a0 ($a1)
+	lw $t7 ($a1)
 
-	move $t7 $a0
-	
 	li $v0 1
 	move $a0 $t7
 	syscall
@@ -367,7 +391,7 @@ Carte1init:
 	jal nbrVerifRegister
 	j loop
 	
-	
+
 	
 	
 Carte2init:
@@ -378,9 +402,7 @@ Carte2init:
 	li $t5 14		#nombre de  chiffres du code Diners Club
 
 	la $a1 carte2
-	lw $a0 ($a1)
-
-	move $t7 $a0
+	lw $t7 ($a1)
 	
 	li $v0 1
 	move $a0 $t7
@@ -397,7 +419,7 @@ Carte3init:
 	
 	jal choixTaille16a19
 	
-	li $a1, 7		
+	li $a1, 9	
     	li $v0, 42  
     	syscall
 	add $a0, $a0, 0
@@ -405,9 +427,9 @@ Carte3init:
 	mul $t4 $a0 4
 	la $a1 carte3
 	add $a1 $a1 $t4
-	lw $a0 ($a1)
-
-	move $t7 $a0
+	lw $t7 ($a1)
+	
+	jal plageCarte
 	
 	li $v0 1
 	move $a0 $t7
@@ -432,9 +454,7 @@ Carte4init:
 	mul $t4 $a0 4
 	la $a1 carte4
 	add $a1 $a1 $t4
-	lw $a0 ($a1)
-
-	move $t7 $a0
+	lw $t7 ($a1)
 	
 	li $v0 1
 	move $a0 $t7
@@ -450,18 +470,10 @@ Carte5init:
 	syscall
 	
 	jal choixTaille16a19
-	
-	li $a1, 2		#sequence pour generer un nombre aleatoire
-    	li $v0, 42  
-    	syscall
-	add $a0, $a0, 0
-	
-	mul $t4 $a0 4
-	la $a1 carte5
-	add $a1 $a1 $t4
-	lw $a0 ($a1)
 
-	move $t7 $a0
+	li $t7 3528
+	
+	jal plageCarte
 	
 	li $v0 1
 	move $a0 $t7
@@ -479,7 +491,7 @@ Carte6init:
 	
 	jal choixTaille16a19
 	
-	li $a1, 8		#sequence pour generer un nombre aleatoire
+	li $a1, 9		#sequence pour generer un nombre aleatoire
     	li $v0, 42  
     	syscall
 	add $a0, $a0, 0
@@ -487,9 +499,7 @@ Carte6init:
 	mul $t4 $a0 4
 	la $a1 carte6
 	add $a1 $a1 $t4
-	lw $a0 ($a1)
-
-	move $t7 $a0
+	lw $t7 ($a1)
 	
 	li $v0 1
 	move $a0 $t7
@@ -505,7 +515,7 @@ Carte7init:
 	la $a0 choixCarte7
 	syscall
 	
-	li $a1, 4		#sequence pour generer un nombre aleatoire
+	li $a1, 6		#sequence pour generer un nombre aleatoire
     	li $v0, 42  
     	syscall
 	add $a0, $a0, 0
@@ -513,9 +523,9 @@ Carte7init:
 	mul $t4 $a0 4
 	la $a1 carte7
 	add $a1 $a1 $t4
-	lw $a0 ($a1)
-
-	move $t7 $a0
+	lw $t7 ($a1)
+	
+	jal plageCarte
 	
 	li $v0 1
 	move $a0 $t7
@@ -531,33 +541,7 @@ Carte8init:				# Pas besoin d'autres boucles ou fonctions pour uniquement un 4 e
 	la $a0 choixCarte8
 	syscall
 	
-	jal choixTaille13ou16ou19
-	
-	li $t6 4
-	
-	li $v0 1
-	move $a0 $t6
-	syscall
-	
-	beq $t3 1 chiffreImpair
-	
-	
-Carte9init:
-	li $v0 4
-	la $a0 choixCarte9
-	syscall
-	
-	li $a1, 5		#sequence pour generer un nombre aleatoire
-    	li $v0, 42  
-    	syscall
-	add $a0, $a0, 0
-	
-	mul $t4 $a0 4
-	la $a1 carte9
-	add $a1 $a1 $t4
-	lw $a0 ($a1)
-
-	move $t7 $a0
+	li $t7 4
 	
 	li $v0 1
 	move $a0 $t7
@@ -565,6 +549,79 @@ Carte9init:
 	
 	jal nbrVerifRegister
 	j loop
+	
+	
+Carte9init:
+	li $v0 4
+	la $a0 choixCarte9
+	syscall
+	
+	li $a1, 6		#sequence pour generer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 0
+	
+	mul $t4 $a0 4
+	la $a1 carte9
+	add $a1 $a1 $t4
+	lw $t7 ($a1)
+	
+	li $v0 1
+	move $a0 $t7
+	syscall
+	
+	jal nbrVerifRegister
+	j loop
+	
+	
+	
+#######################################################
+### SEQUENCE DE GESTION DES PLAGES GENEREES
+###
+###
+### Cette sequence permet la generation d'un nombre
+### aleatoire compris dans la plage si au prealable
+### le choix de l'element du tableau choisit 
+### le nombre le plus bas de la plage
+#######################################################		
+	
+	
+	
+plageCarte:
+	beq $t7 622126 plageCarte3
+	beq $t7 3528 plageCarte5
+	beq $t7 222100 plageCarte7
+	jr $ra
+	
+
+plageCarte3:
+	li $a1, 800		#sequence pour generer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 622126
+	move $t7 $a0
+	jr $ra	
+	
+	
+plageCarte5:
+	li $a1, 62		#sequence pour generer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 3528
+	move $t7 $a0
+	jr $ra	
+	
+plageCarte7:
+	li $a1, 50000		#sequence pour generer un nombre aleatoire
+    	li $v0, 42  
+    	syscall
+	add $a0, $a0, 222100
+	move $t7 $a0
+	jr $ra	
+	
+	
+	
+	
 	
 	
 #######################################################
@@ -622,13 +679,18 @@ choixTaille13ou16ou19:
 	
 	
 alea16a19:
-	li $a1, 18		#sequence pour generer un nombre aleatoire qui sera la taille du code a generer
+	li $a1, 4		#sequence pour generer un nombre aleatoire qui sera la taille du code a generer
     	li $v0, 42  
     	syscall
-	add $a0, $a0, 15
+	add $a0, $a0, 0
 	
-	move $t5 $a0
-	jr $ra	
+	addi $t5 $a0 15
+	beq $t5 16 choixTaille16
+	beq $t5 17 choixTaille17
+	beq $t5 18 choixTaille18
+	beq $t5 19 choixTaille19
+	
+	jr $ra
 alea13ou16ou19:
 	li $a1, 3		#sequence pour generer un nombre aleatoire qui sera la taille du code a generer
     	li $v0, 42  
@@ -638,6 +700,10 @@ alea13ou16ou19:
 	move $t5 $a0		#on prend un nombre entre 0 et 2, le mutliplie par 3 et lui ajoute 13 ce qui donne 13, 16 ou 19
 	mul $t5 $t5 3
 	addi $t5 $t5 13
+	
+	beq $t5 17 choixTaille17
+	beq $t5 18 choixTaille18
+	beq $t5 19 choixTaille19
 	jr $ra	
 choixTaille13:
 	li $t5 12
@@ -676,11 +742,44 @@ nbrVerifRegister:
 	j nbrVerif
 
 nbrVerif:				#ordre de grandeur dans lequel le nombre entre dans la boucle
+	li $t6 0
+	bgt $t7 99999 sup99999
+	bgt $t7 9999 sup9999
 	bgt $t7 999 sup999	
 	bgt $t7 99 sup99	
 	bgt $t7 9 sup9	
 	bgt $t7 0 sup0		
 	
+
+	
+sup99999:
+	bgt $t7 99999 sup99999bis
+	subi $t5 $t5 1
+	jal verifParite
+	add $t9 $t9 $t6
+	li $t6 0
+	j sup9999
+	
+sup99999bis:	
+	subi $t7 $t7 100000
+	addi $t6 $t6 1	
+	j sup99999
+	
+		
+				
+sup9999:
+	bgt $t7 9999 sup9999bis
+	subi $t5 $t5 1
+	jal verifParite
+	add $t9 $t9 $t6
+	li $t6 0
+	j sup999
+	
+sup9999bis:	
+	subi $t7 $t7 10000
+	addi $t6 $t6 1	
+	j sup9999	
+
 	
 sup999:
 	bgt $t7 999 sup999bis
