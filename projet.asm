@@ -703,14 +703,6 @@ alea13ou16ou19:
 	mul $t5 $t5 3
 	addi $t5 $t5 12
 	
-	li $v0 1
-	move $a0 $t5
-	syscall
-	
-	li $v0 4
-	la $a0 espace
-	syscall
-	
 	beq $t5 17 choixTaille17
 	beq $t5 18 choixTaille18
 	beq $t5 19 choixTaille19
