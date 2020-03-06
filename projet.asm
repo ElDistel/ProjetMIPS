@@ -46,10 +46,9 @@
 	# listes
 	cardList: .word visaElectron, visa, masterCard, maestro, americanExpress, dinersClub, discover, instaPayment
 	cardNamesList: .word visaElectronName, visaName, masterCardName, maestroName, americanExpressName, dinersClubName, discoverName, instaPaymentName
-	
   ###
   
-	numeroCarte: .space 20
+	numeroCarte: .space 22
   	successMessage: .asciiz "\nLe numero est valide!\n"
   	failMessage: .asciiz "\nLe numero n'est pas valide!\n"
 .text
@@ -117,7 +116,7 @@ choix1:
 longueur:
    la $a0, numeroCarte
    addi $t0, $zero, -1 # -1 pour normaliser
-   jal longueur.loop
+   j longueur.loop
 
 longueur.loop:
    lb $t5, 0($a0) #charger le caractere a $a0
@@ -234,15 +233,95 @@ checkSuccess.success:
  
 checkSuccess.end:
    # checker les plages
+   
+   # pour jcb
+   
+   addi $t0, $zero, 4 # on cherche le nombre des 4 premiers chiffre
+   la $a2, jbcName # name
+   la $a3, jcbRange # range
+   lw $s3, 0($a3) # start range
+   lw $s4, 4($a3) # end range
+   jal checkCardProvider.ranges # check if its in range
+   
+   # pour discover
+   
+   addi $t0, $zero, 6 # on cherche le nombre des 6 premiers chiffre
+   la $a2, discoverName # name
+   la $a3, discoverRange # range
+   jal checkCardProvider.ranges # check if its in range
+   
+   # pour masterCard
+   addi $t0, $zero, 6 # on cherche le nombre des 6 premiers chiffre
+   la $a2, masterCardName # name
+   la $a3, masterCardRange # range
+   jal checkCardProvider.ranges # check if its in range
+   
+   # not found
    li $v0, 4
    la $a0, providerNotFound
    syscall
+   
    la $a0, espace
    syscall
    j end
    
 end:
    b menu
+   
+# =============================== #
+
+checkCardProvider.ranges:
+
+   la $a1, numeroCarte
+   li $t1, 1 # multiplicateur 
+   li $s2, 0 # resultat
+   lw $s3, 0($a3) # start range
+   lw $s4, 4($a3) # end range
+   addi $t0, $t0, -1 # index commence par 0 et pas par 1
+   addu $a1, $a1, $t0 # pointeur + index
+   j checkCardProvider.ranges.loop
+
+checkCardProvider.ranges.loop:
+   
+   lb $s1, ($a1) # load byte
+   addi $s1, $s1, -48 # normalise number
+   mul $s1, $s1, $t1
+   
+   add $s2, $s2, $s1
+   
+   mul $t1, $t1, 10 
+   addi $a1, $a1, -1
+   addi $t0, $t0, -1
+   bgez $t0, checkCardProvider.ranges.loop
+   
+   li $v0, 1
+   move $a0, $s2
+   syscall
+   
+   li $v0, 4
+   la $a0, espace
+   syscall
+   
+   j checkCardProvider.ranges.checkGreater
+   
+checkCardProvider.ranges.checkGreater:
+   bge $s2, $s3, checkCardProvider.ranges.checkLess
+   jr $ra # non trouver
+
+checkCardProvider.ranges.checkLess:
+   ble $s2, $s4, checkCardProvider.ranges.found
+   jr $ra # trouver
+
+checkCardProvider.ranges.found:
+   li $v0, 4
+   la $a0, providerFound
+   syscall
+   # emetteur
+   move $a0, $a2
+   syscall
+
+j end
+
    
 # variables obligatoires de la fonction:
 # => $a1 = chiffres de debut specifiques a la carte
@@ -313,11 +392,11 @@ checkCardProvider.finish:
 
 #$t2 est la variable aleatoire 
 
-#$t3 est la variable faisant office de vÃ©rificateur pour chiffre pair ou impair
+#$t3 est la variable faisant office de v�?©rificateur pour chiffre pair ou impair
 
 #$t5 est la longueur du code de carte
 
-#$t8 est le dernier chiffre du code de carte calculÃ© initialisÃ© Ã  10
+#$t8 est le dernier chiffre du code de carte calcul�?© initialis�?© �?�  10
 
 #$t9 est la somme de tous les chiffres
 
@@ -335,7 +414,7 @@ choix2:
 loop:
 	beq $t5 $zero finLoop
 	
-	li $a1, 9		#sequence pour gÃ©nÃ©rer un nombre aleatoire
+	li $a1, 9		#sequence pour g�?©n�?©rer un nombre aleatoire
     	li $v0, 42  
     	syscall
     	add $a0, $a0, 1  
@@ -380,14 +459,14 @@ finLoop:
 
 chiffreImpair:
 	mul $t2 $t2 2
-	bgt $t2 9 moinsNeuf	#si $t2 est superieur a� 9
-	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compte comme impair, et au tour d'aprÃ¨s $t1 vaudra Ã  nouveau 1
+	bgt $t2 9 moinsNeuf	#si $t2 est superieur a  9
+	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compte comme impair, et au tour d'apr�?¨s $t1 vaudra �?�  nouveau 1
 	j sommeLoop
 	
 	
 moinsNeuf:
 	subi $t2 $t2 9
-	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit comptÃ© comme impair, et au tour d'aprÃ¨s $t1 vaudra Ã  nouveau 1
+	addi $t3 $t3 1		#on ajoute 1 pour que le chiffre suivant soit compt�?© comme impair, et au tour d'apr�?¨s $t1 vaudra �?�  nouveau 1
 	j sommeLoop
 	
 
