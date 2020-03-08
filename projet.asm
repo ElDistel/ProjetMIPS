@@ -48,9 +48,10 @@
 	cardNamesList: .word visaElectronName, visaName, masterCardName, maestroName, americanExpressName, dinersClubName, discoverName, instaPaymentName
   ###
   
-	numeroCarte: .space 22
+	numeroCarte: .space 32
   	successMessage: .asciiz "\nLe numero est valide!\n"
   	failMessage: .asciiz "\nLe numero n'est pas valide!\n"
+  	askMessage: .asciiz "\nVeuillez entrer le numero de CB: "
 .text
 
 
@@ -97,7 +98,12 @@ menu:
 choix1:
 	# service numero 1
 
-  # lire numero de carte (test: 376701449043032)
+  # afficher message
+  li $v0, 4
+  la $a0, askMessage
+  syscall
+  
+  # lire numero de carte
   li $v0, 8
   la $a0, numeroCarte
   li $a1, 20
@@ -105,73 +111,76 @@ choix1:
 
   # somme
   li $t0, 0 # somme
-  li $t1, 0 # compteur i (commence a 14)
+  li $t1, 0 # compteur i
   li $t2, 9 # 9
-  li $t3, 0 #compteur a
-  li $t4, 2 #mod 2
+  li $t3, 1 #compteur a
+  li $s5, 2
   
   j longueur # longueur du numero
 
 # lire la longueur du numero
 longueur:
-   la $a0, numeroCarte
-   addi $t0, $zero, -1 # -1 pour normaliser
+   la $a1, numeroCarte
+   addi $t0, $zero, 0
    j longueur.loop
 
 longueur.loop:
-   lb $t5, 0($a0) #charger le caractere a $a0
-   beqz $t5, calcul #si on atteint le caractere null continuer la boucle
-
-   addi $a0, $a0, 1 #incrementer la position du pointeur
+   lb $t5, ($a1) #charger le caractere a $a0
+   
+   beqz $t5, calcul #si on atteint le caractere null sortir de la boucle
+   beq $t5, 10, calcul #si on atteint le caractere Backspace sortir de la boucle 
+   beq $t5, 8, calcul #si on atteint le caractere NL sortir de la boucle
+   
+   addi $a1, $a1, 1 #incrementer la position du pointeur
    addi $t0, $t0, 1 #incrementer le compteur
 
    j longueur.loop # on continue comme on a trouve la longueur
 
 calcul:
-   addi $t1, $t0, -2 # comme on ne veut pas inclure le derniere chiffre de la carte, on soustrait 1 a la longueur 
+   sub $t1, $t0, 2 # comme on ne veut pas inclure le derniere chiffre de la carte, on soustrait 1 a la longueur 
+     
    add $s4, $zero, $t1 # sauvegarder la valeur pour l'utiliser a la fin
-   addi $t0, $zero, 0 
+   addi $t0, $zero, 0
+   la $a1, numeroCarte
+   addu $a1,$a1, $t1
    
    j calcul.loop
 
 calcul.loop:
-   blt $t1, $zero, check
-   #li $s0, 4 #iterator
-   la $a1, numeroCarte
-   addu $a1,$a1,$t1  # $a1 = &str[x]. x est dans $t0
-   lbu $t5,($a1)      # lire le caractere
+   bltz $t1, check
+   
+   lbu $t5,($a1) # lire le caractere
    
    # le caractere est en ascii, on soustrait alors -48 (position du 0)
    addi $t5, $t5, -48
-   
-   div $t3, $t4 # a % 2
+  
+   div $t3, $s5 # a % 2
    mfhi $s0 # recuperer le mod dans le hi register et le stocker dans $s0
    
-   beq $s0, $zero, modVal # i % 2 == 0
+   bnez $s0, modVal # i % 2 != 0 impaire
 
    j loop_end
 
 loop_end:
-
-   bgt $t5, $t2, subVal # si valeur > 9
+   bgt $t5, 9, subVal # si valeur > 9
    
    add $t0, $t0, $t5 # ajouter a la somme
    # add
+   addi $a1, $a1, -1 # i--
    addi $t1, $t1, -1 # i--
    addi $t3, $t3, 1 # a++
+   
    j calcul.loop
    
 modVal:
-   #add $s0, $zero, $t5
-   #addi $s0, $zero, 2
-   mul $t5, $t5, $t4 # multiplier par 2
+   mul $t5, $t5, 2 # multiplier par 2
    j loop_end
 
 subVal:
-   sub $t5,$t5,$t2
+   sub $t5,$t5,9
    j loop_end # valeur max est 18 - 9 = 9 donc beq ne sera plus execute
 
-check:
+check:   
    addi $s1, $zero, 10
    div $t0, $s1 # somme % 10
    mfhi $s0 # recuperer le mod dans le hi register et le stocker dans $s0
@@ -182,12 +191,12 @@ check:
    add $t4, $zero, $s4
    
    la $a1, numeroCarte
-   addu $a1,$a1,$t4  # $a1 = &str[x].  assumes x is in $t0
-   lbu $t5,($a1)
+   addu $a1,$a1,$t4  # pointeur + $t4 pour trouver la valeur tab[x]
+   lbu $t5,($a1) # charger caractere
    
    # le caractere est en ascii, on soustrait alors -48 (position du 0)
    addi $t5, $t5, -48
-  
+   
    # check result
    li $v0, 4
    
@@ -266,6 +275,11 @@ checkSuccess.end:
    j end
    
 end:
+
+   li $v0, 4
+   la $a0, espace
+   syscall
+
    b menu
    
 # =============================== #
@@ -293,14 +307,6 @@ checkCardProvider.ranges.loop:
    addi $a1, $a1, -1
    addi $t0, $t0, -1
    bgez $t0, checkCardProvider.ranges.loop
-   
-   li $v0, 1
-   move $a0, $s2
-   syscall
-   
-   li $v0, 4
-   la $a0, espace
-   syscall
    
    j checkCardProvider.ranges.checkGreater
    
