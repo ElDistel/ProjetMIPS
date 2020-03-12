@@ -1,11 +1,11 @@
 .data
 	hello: .asciiz 		"\nBienvenue !\n"
-	msgChoix: .asciiz 	"\nTapez 1: saisir un numero de carte bancaire pour en verifier la validite\nTapez 2: Affichage d'un numero valide\nTapez 3: Quitter le programme\n\n>>>> "
+	msgChoix: .asciiz 	"\nTapez 1: saisir un numero de carte bancaire pour en verifier la validite\nTapez 2: Generation et affichage d'un numero valide\nTapez 3: Quitter le programme\n\n>>>> "
 	choixCarte: .asciiz	"Choisissez quel type de carte vous voulez :\n1- American Express\n2- Diners Club\n3- Discover\n4- InstaPayment\n5- JCB\n6- Maestro\n7- MasterCard\n8- VISA\n9- VISA Electron\n>>>>"
 	msgReChoisir: .asciiz 	"\nChiffre saisi incorrect, \nVeuillez choisir parmis les propositions presentees\n"
 	espace: .asciiz 	"\n\n"
-	msgTaille16a19: .asciiz 	"\nVeuillez entrer la taille du code souhaitee entre 16 et 19, tapez 1 pour choisir aleatoirement\n>>>>"
-	msgTaille13ou16ou19: .asciiz	"\nVeuillez entrer la taille du code souhaitee entre 13, 16 ou 19, tapez 1 pour choisir aleatoirement\n>>>>"
+	msgTaille16a19: .asciiz 	"\nVeuillez entrer la taille du code souhaite entre 16 et 19, tapez 1 pour choisir aleatoirement\n>>>>"
+	msgTaille13ou16ou19: .asciiz	"\nVeuillez entrer la taille du code souhaite entre 13, 16 ou 19, tapez 1 pour choisir aleatoirement\n>>>>"
 	
 	temp1: .asciiz		"\nVous avez choisi le choix numero 1\n\n"
 	temp2: .asciiz		"\nVous avez choisi le choix numero 2\n\n"
